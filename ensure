@@ -1,0 +1,140 @@
+local mainTerminal = 1
+
+rednet.open("left")
+
+function setMainTerminalId(id)
+    mainTerminal = id
+end
+
+function getMainTerminalId(id)
+    return mainTerminal
+end
+
+function sendOk()
+    rednet.send(mainTerminal, "OK,Working.")
+end
+
+function sendIdle()
+    rednet.send(mainTerminal, "Idle,")
+end
+
+local function ensure(predicate,errMessage,errManual)
+    while true do
+        local result = predicate()
+        if result then
+            break
+        else
+            rednet.send(mainTerminal, errMessage)
+            print(errMessage)
+            print(errManual)
+            print("Once issue solved, please input 'continue'.")
+            print("To exit, input 'quit.'")
+
+            local msg = ""
+            while true do
+                msg = io.read()
+                if msg == "continue" then
+                    break
+                elseif msg == "quit" then
+                    sendIdle()
+                    error("aborted.")
+                end
+            end
+
+            sendOk()
+        end
+    end
+end
+
+local function placeFinding(predicate, dig)
+    for i = 2, 16 do
+        if turtle.getItemCount(i) > 0 then
+            turtle.select(i)
+            dig()
+            return predicate()
+        end
+    end
+    return false;
+end
+
+local function placeRedirect()
+    return placeFinding(turtle.place, turtle.dig)
+end
+
+local function placeDownRedirect()
+    return placeFinding(turtle.placeDown, turtle.digDown)
+end
+
+local function placeUpRedirect()
+    return placeFinding(turtle.placeUp, turtle.digUp)
+end
+
+function place()
+    ensure(placeRedirect, "Err1,Cannot place", "Set resouces or remove a block.")
+end
+
+function placeDown()
+    ensure(placeDownRedirect, "Err1,Cannot place down", "Set resouces or remove a block.")
+end
+
+function placeUp()
+    ensure(placeUpRedirect, "Err1,Cannot place up", "Set resouces or remove a block.")
+end
+
+local function moveDigging(predicate, dig)
+    local result, msg = predicate()
+    if not result then
+        dig()
+        return predicate()
+    else
+        return true
+    end
+end
+
+local function forwardRedirect()
+    return moveDigging(turtle.forward, turtle.dig)
+end
+
+local function digBack()
+    turtle.turnLeft()
+    turtle.turnLeft()
+    turtle.dig()
+    turtle.turnLeft()
+    turtle.turnLeft()
+end
+
+local function backRedirect()
+    return moveDigging(turtle.back, digBack)
+end
+
+local function upRedirect()
+    return moveDigging(turtle.up, turtle.digUp)
+end
+
+local function downRedirect()
+    return moveDigging(turtle.down, turtle.digDown)
+end
+
+local function checkFuel()
+    return turtle.getFuelLevel() > 0
+end
+
+function forward()
+    ensure(checkFuel, "Err3,Out of fuel", "Put some fuel.")
+    ensure(forwardRedirect, "Err2,Cannot move forward", "Remove an obstacle.")
+end
+
+function back()
+    ensure(checkFuel, "Err3,Out of fuel", "Put some fuel.")
+    ensure(backRedirect, "Err2,Cannot move back", "Remove an obstacle.")
+end
+
+function up()
+    ensure(checkFuel, "Err3,Out of fuel", "Put some fuel.")
+    ensure(upRedirect, "Err2,Cannot move up", "Remove an obstacle.")
+end
+
+function down()
+    ensure(checkFuel, "Err3,Out of fuel", "Put some fuel.")
+    ensure(downRedirect, "Err2,Cannot move down", "Remove an obstacle.")
+end
