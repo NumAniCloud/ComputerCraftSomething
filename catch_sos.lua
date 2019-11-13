@@ -51,12 +51,22 @@ while true do
             mon.setCursorPos(1,index*2)
             mon.clearLine()
             mon.write("  "..contents[2])
-        else
+        elseif contents[1]:find("Idle") ~= nil then
             mon.setTextColor(colors.white)
 
             mon.setCursorPos(1,index*2-1)
             mon.clearLine()
-            mon.write("#"..sender_id.." is OK")
+            mon.write("#"..sender_id.." is Idling.")
+    
+            mon.setCursorPos(1,index*2)
+            mon.clearLine()
+            mon.write("  "..contents[2])
+        else
+            mon.setTextColor(colors.green)
+
+            mon.setCursorPos(1,index*2-1)
+            mon.clearLine()
+            mon.write("#"..sender_id.." is OK.")
 
             mon.setCursorPos(1,index*2)
             mon.clearLine()
